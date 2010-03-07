@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * Implementation of hook_views_api.
+ */
+function noderefdepth_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+
+function _noderefdepth_find_nid_down($nid, $table, $field, $depth, $current_depth = 0) {
+  $nids = array();
+  $current_depth++;
+  $result = db_query(db_rewrite_sql('SELECT n.nid FROM {node} n join {%s} c on c.vid = n.vid WHERE c.%s = %d'), array($table,$field,$nid));
+  while ($row = db_fetch_object($result)) {
+    $nids[] = $row->nid; 
+    if ($current_depth < $depth) { 
+      $new_nids = _noderefdepth_find_nid_down($row->nid,$table, $field, $depth,$current_depth);
+      if ($new_nids) $nids = array_merge($nids,$new_nids);
+    }
+  }
+  return $nids; 
+} 
+
+function _noderefdepth_find_nid_up($nid, $table, $field, $depth, $current_depth = 0) {
+  $nids = array();
+  $current_depth++;
+  $result = db_query(db_rewrite_sql('SELECT n.nid FROM {node} n join {%s} c on c.%s = n.nid WHERE c.vid in (SELECT vid from {node} where nid = %d )'), array($table,$field,$nid));
+  while ($row = db_fetch_object($result)) {
+    $nids[] = $row->nid; 
+    if ($current_depth < $depth) { 
+      $new_nids = _noderefdepth_find_nid_up($row->nid,$table, $field, $depth,$current_depth);
+      if ($new_nids) $nids = array_merge($nids,$new_nids);
+    } 
+  }
+  
+  return $nids; 
+} 

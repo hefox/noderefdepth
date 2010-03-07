@@ -1,0 +1,5 @@
+name = Node reference with depth
+description = Filter that checks for node references with a depth amount  
+package = Views
+core = 6.x
+dependencies[] = nodereference
